@@ -15,9 +15,20 @@ def random_duracao(tipo): #retorna um valor de duração do corte com base no ti
         return random.randint(2, 4)
     return random.randint(1, 3)
 
+def sargento(clientes, filas, cont): #função recursiva pra fazer o trabalho do sargento
+    if(cont < 3):
+        if(len(clientes) > 0):
+            clienteAtual = clientes.pop()
+            insere_fila(filas, clienteAtual, random.randint(1, 5))
+        else:
+            cont+=1
+        sargento(clientes, filas, cont)
+
+    logging.info("Sargento Tainha indo embora!")
+
 def insere_fila(filas, tipo, cochilo): #(lista, inteiro, inteiro), é dado o tipo de cliente e o tempo de cochilo após inseri-lo. 1 == oficial, 2 == sargento, 3 == cabo
     if((len(filas[0]) + len(filas[1]) + len(filas[2])) <= 20):
-        logging.info("Sargento Tainha: inserindo", tipo)
+        logging.info("Sargento Tainha: inserindo %d", tipo)
         duracao = random_duracao(tipo)
         filas[tipo - 1].append(duracao) ## 0 é oficial, 1 é sargento, 2 é cabo
         time.sleep(cochilo)
@@ -27,16 +38,25 @@ def insere_fila(filas, tipo, cochilo): #(lista, inteiro, inteiro), é dado o tip
         logging.info("Pausa!")
         time.sleep(cochilo)
         return 1 #se retornar 1, inserção pausada
-    else:
+    elif(tipo == 2):
         logging.info("Fila cheia!")
         time.sleep(cochilo)
         return 2
+    else: #se a fila estiver vazia
+        return 3
 
 def corteBarbeiro(nome, fila):
-    logging.info("Barbeiro ", nome, ": cortando")
-    clienteAtual = fila.pop() #cada cliente é representado por um inteiro (duração do corte)
-    time.sleep(clienteAtual)
-    logging.info("Barbeiro ", nome, ": livre")
+    if(len(fila) > 0):
+        logging.info("Barbeiro %s: cortando", nome)
+        clienteAtual = fila.pop() #cada cliente é representado por um inteiro (duração do corte)
+        time.sleep(clienteAtual)
+        logging.info("Barbeiro %s: livre", nome)
+        corteBarbeiro(nome, fila)
+    else:
+        logging.info("Barbeiro %s: fila vazia!", nome)
+        time.sleep(1)
+        corteBarbeiro(nome, fila)
+
 
 #main
 clientes = []
@@ -48,10 +68,8 @@ format = "%(asctime)s: %(message)s"
 logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
 
 filas = [[], [], []]
-cont = 0
-while(cont < 3): 
-    sargento = threading.Thread(target=insere_fila, args=(filas, clientes.pop(), random.randint(1, 5)))
-    sargento.start()
 
-    barbeiro = threading.Thread(target=corteBarbeiro, args=("Zero", filas[0]))
-    barbeiro.start()
+tainha = threading.Thread(target=sargento, args=(clientes, filas, 0))
+barbeiro = threading.Thread(target=corteBarbeiro, args=("Zero", filas[0] + filas[1] + filas[2])) #PRECISA FAZER O barbeiro OLHAR AS FILAS NA ORDEM, E TAMBEM INSERIR NA ORDEM CERTA
+tainha.start()
+barbeiro.start()
