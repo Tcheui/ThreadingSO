@@ -15,14 +15,14 @@ def random_duracao(tipo): #retorna um valor de duração do corte com base no ti
         return random.randint(2, 4)
     return random.randint(1, 3)
 
-def sargento(clientes, filas, cont): #função recursiva pra fazer o trabalho do sargento
+def sargento(tipoCliente, filas, cont): #função recursiva pra fazer o trabalho do sargento
     if(cont < 3):
-        if(len(clientes) > 0):
-            clienteAtual = clientes.pop()
-            insere_fila(filas, clienteAtual, random.randint(1, 5))
+        if(len(tipoCliente) > 0):
+            tipoAtual = tipoCliente.pop()
+            insere_fila(filas, tipoAtual, random.randint(1, 4))
         else:
             cont+=1
-        sargento(clientes, filas, cont)
+        sargento(tipoCliente, filas, cont)
 
     logging.info("Sargento Tainha indo embora!")
 
@@ -45,6 +45,16 @@ def insere_fila(filas, tipo, cochilo): #(lista, inteiro, inteiro), é dado o tip
     else: #se a fila estiver vazia
         return 3
 
+def ordenaPrioridade(fila):
+    """ordena a fila por prioridade"""
+    fila_ordenada = []
+    # itera sobre os tipos
+    for tipo in range(3):
+        for elemento in fila:
+            if elemento == tipo:
+                fila_ordenada.append(elemento)
+    return fila_ordenada
+
 def corteBarbeiro(nome, fila):
     if(len(fila) > 0):
         logging.info("Barbeiro %s: cortando", nome)
@@ -59,17 +69,18 @@ def corteBarbeiro(nome, fila):
 
 
 #main
-clientes = []
+tipoCliente = []
 for i in range(10):
-    clientes.append(random.randint(1, 3))
-print(clientes)
+    tipoCliente.append(random.randint(1, 3))
+print(tipoCliente)
 
 format = "%(asctime)s: %(message)s"
 logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
 
 filas = [[], [], []]
 
-tainha = threading.Thread(target=sargento, args=(clientes, filas, 0))
-barbeiro = threading.Thread(target=corteBarbeiro, args=("Zero", filas[0] + filas[1] + filas[2])) #PRECISA FAZER O barbeiro OLHAR AS FILAS NA ORDEM, E TAMBEM INSERIR NA ORDEM CERTA
+tainha = threading.Thread(target=sargento, args=(tipoCliente, filas, 0))
+#PRECISA FAZER O barbeiro OLHAR AS FILAS NA ORDEM, E TAMBEM INSERIR NA ORDEM CERTA
+barbeiro = threading.Thread(target=corteBarbeiro, args=("Zero", filas))
 tainha.start()
 barbeiro.start()
