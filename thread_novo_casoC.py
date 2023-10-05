@@ -94,57 +94,43 @@ def geraRelatorio(fila_cadeiras, contagem_categorias):
            arrumaDivisaoPorZero(tw_acumulado[1], numAtendimentos[1]), 
            arrumaDivisaoPorZero(tw_acumulado[2], numAtendimentos[2])] #waiting médio
     if numAtendimentos[0] > 0 or numAtendimentos[1] > 0 or numAtendimentos[2] > 0:
-        logging.info("""Relatório, General!!!
-        Ocupação de oficiais: %.0f %%
-        Ocupação de sargentos: %.0f %%
-        Ocupação de cabos: %.0f %%
-        Livre: %.0f %%
-        Comprimento médio das filas: %.3f
-        Tempo de atendimento médio para oficiais: %.3f
-        Tempo de atendimento médio para sargentos: %.3f 
-        Tempo de atendimento médio para cabos: %.3f 
-        Tempo de espera médio para oficiais: %.3f 
-        Tempo de espera médio para sargentos: %.3f 
-        Tempo de espera médio para cabos: %.3f
-        Número de atendimentos de oficiais: %.0f
-        Número de atendimentos de sargentos: %.0f
-        Número de atendimentos de cabos: %.0f
-        Número de total de oficiais: %.0f
-        Número de total de sargentos: %.0f
-        Número de total de cabos: %.0f
-        """,
-          contagem_categorias['oficial']*5,
-          contagem_categorias['sargento']*5,
-          contagem_categorias['cabo']*5,
-          (20 - contagem_categorias['oficial'] - contagem_categorias['sargento'] - contagem_categorias['cabo'])*5,
-          (contagem_categorias['oficial'] + contagem_categorias['sargento'] + contagem_categorias['cabo'])/3,
-          ttm[0],
-          ttm[1],
-          ttm[2],
-          twm[0],
-          twm[1],
-          twm[2],
-          numAtendimentos[0],
-          numAtendimentos[1],
-          numAtendimentos[2],
-          numClientes[0],
-          numClientes[1],
-          numClientes[2])
-        #print("Tempo médio de espera: ")
+        logging.info(f"""
+            Relatório pronto, General!
+            -------------------
+            Ocupação de Oficiais: {contagem_categorias['oficial'] * 5:.0f}%
+            Ocupação de Sargentos: {contagem_categorias['sargento'] * 5:.0f}%
+            Ocupação de Cabos: {contagem_categorias['cabo'] * 5:.0f}%
+            Livre: {(20 - contagem_categorias['oficial'] - contagem_categorias['sargento'] - contagem_categorias['cabo']) * 5:.0f}%
 
-def tenente(fila_cadeiras, intervalo = 3): #gerador do relatório
-    while True:
-        with semaphore:
-            contagem_categorias = {'oficial': 0, 'sargento': 0, 'cabo': 0}
+            Comprimento Médio das Filas: {((contagem_categorias['oficial'] + contagem_categorias['sargento'] + contagem_categorias['cabo']) / 3):.3f}
+            Tempo de Atendimento Médio para Oficiais: {ttm[0]:.3f}
+            Tempo de Atendimento Médio para Sargentos: {ttm[1]:.3f}
+            Tempo de Atendimento Médio para Cabos: {ttm[2]:.3f}
+            Tempo de Espera Médio para Oficiais: {twm[0]:.3f}
+            Tempo de Espera Médio para Sargentos: {twm[1]:.3f}
+            Tempo de Espera Médio para Cabos: {twm[2]:.3f}
 
-            for item in fila_cadeiras:
-                if item['categoria'] in contagem_categorias:
-                    contagem_categorias[item['categoria']] += 1
-                else:
-                    print("Erro: categoria não conhecida!")
+            Número de Atendimentos de Oficiais: {numAtendimentos[0]:.0f}
+            Número de Atendimentos de Sargentos: {numAtendimentos[1]:.0f}
+            Número de Atendimentos de Cabos: {numAtendimentos[2]:.0f}
 
-            geraRelatorio(fila_cadeiras, contagem_categorias)
-            time.sleep(intervalo)
+            Número Total de Oficiais: {numClientes[0]:.0f}
+            Número Total de Sargentos: {numClientes[1]:.0f}
+            Número Total de Cabos: {numClientes[2]:.0f}
+            """)
+
+def tenente(fila_cadeiras): 
+    """ Oficial que gera o relatório"""
+    with semaphore:
+        contagem_categorias = {'oficial': 0, 'sargento': 0, 'cabo': 0}
+
+        for item in fila_cadeiras:
+            if item['categoria'] in contagem_categorias:
+                contagem_categorias[item['categoria']] += 1
+            else:
+                print("Erro: categoria não conhecida!")
+
+        geraRelatorio(fila_cadeiras, contagem_categorias)
 
 def sargento(fila_cadeiras, cochilo):
     """ Tenta adicionar um cliente a fila sempre que parar de cochilar """
@@ -167,9 +153,10 @@ def sargento(fila_cadeiras, cochilo):
                 cont_consecutivas = 0
         
         # Verifica as condições de parada do sargento. Se entrarem 1000 registros ou fila cheia três vezes consecutivas.
-        if cont >= 1000 or cont_consecutivas == 3:
+        if cont >= 100 or cont_consecutivas == 3:
             logging.info("Sargento tainha indo embora!")
-            break        
+            tenente(fila_cadeiras)
+            break      
 
 def barbeiro(fila_cadeiras, barbeiro, categoria):
     """ Dá a informação do que está fazendo todos os segundos."""
@@ -225,17 +212,20 @@ logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.INFO, datef
 
 # Pergunta ao usuário
 cochilo_tainha = int(input("Digite o tempo de Cochilo do Sargento Tainha [ENTRE 1 E 5 SEGUNDOS]: "))
+while(cochilo_tainha < 1 or cochilo_tainha > 5):
+    print("Tempo de cochilo inválido!!")
+    cochilo_tainha = int(input("Digite novamente o tempo de Cochilo do Sargento Tainha [ENTRE 1 E 5 SEGUNDOS]: "))
 
 # Início das threads
 Sargento_tainha = threading.Thread(target=sargento, args=(fila_cadeiras, cochilo_tainha))
 RecrutaZero = threading.Thread(target=barbeiro, args=(fila_cadeiras,"Zero","oficial"))
 Dentinho = threading.Thread(target=barbeiro, args=(fila_cadeiras,"Dentinho", "sargento"))
 Otto = threading.Thread(target=barbeiro, args=(fila_cadeiras,"Otto", "cabo"))
-Escovinha = threading.Thread(target=tenente, args=(fila_cadeiras, 3))
+#Escovinha = threading.Thread(target=tenente, args=(fila_cadeiras, 3))
 
 # Execução delas
 Dentinho.start()
 Sargento_tainha.start()
 RecrutaZero.start()
 Otto.start()
-Escovinha.start()
+#Escovinha.start()

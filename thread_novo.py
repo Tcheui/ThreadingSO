@@ -117,20 +117,18 @@ def geraRelatorio(fila_cadeiras, contagem_categorias):
             Número Total de Cabos: {numClientes[2]:.0f}
             """)
 
-def tenente(fila_cadeiras, intervalo = 3): 
+def tenente(fila_cadeiras): 
     """ Oficial que gera o relatório"""
-    while True:
-        with semaphore:
-            contagem_categorias = {'oficial': 0, 'sargento': 0, 'cabo': 0}
+    with semaphore:
+        contagem_categorias = {'oficial': 0, 'sargento': 0, 'cabo': 0}
 
-            for item in fila_cadeiras:
-                if item['categoria'] in contagem_categorias:
-                    contagem_categorias[item['categoria']] += 1
-                else:
-                    print("Erro: categoria não conhecida!")
+        for item in fila_cadeiras:
+            if item['categoria'] in contagem_categorias:
+                contagem_categorias[item['categoria']] += 1
+            else:
+                print("Erro: categoria não conhecida!")
 
-            geraRelatorio(fila_cadeiras, contagem_categorias)
-            time.sleep(intervalo)
+        geraRelatorio(fila_cadeiras, contagem_categorias)
 
 def sargento(fila_cadeiras, cochilo):
     """ Tenta adicionar um cliente a fila sempre que parar de cochilar """
@@ -153,7 +151,8 @@ def sargento(fila_cadeiras, cochilo):
                 cont_consecutivas = 0
         
         # Verifica as condições de parada do sargento. Se entrarem 1000 registros ou fila cheia três vezes consecutivas.
-        if cont >= 1000 or cont_consecutivas == 3:
+        if cont >= 100 or cont_consecutivas == 3:
+            tenente(fila_cadeiras)
             logging.info("Sargento tainha indo embora!")
             break        
 
@@ -203,7 +202,6 @@ def atendecliente(cliente, barbeiro):
 # Fila de cadeiras da barbearia
 fila_cadeiras = []
 ID = 0
-semaphore = threading.Semaphore(5)
 
 # Formatação
 logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
@@ -211,17 +209,27 @@ logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.INFO, datef
 
 # Pergunta ao usuário
 cochilo_tainha = int(input("Digite o tempo de Cochilo do Sargento Tainha [ENTRE 1 E 5 SEGUNDOS]: "))
+while(cochilo_tainha < 1 or cochilo_tainha > 5):
+    print("Tempo de cochilo inválido!!")
+    cochilo_tainha = int(input("Digite novamente o tempo de Cochilo do Sargento Tainha [ENTRE 1 E 5 SEGUNDOS]: "))
+
+caso = int(input("Digite o caso do problema (Caso A: 1 ; Caso B: 2): "))
+while(caso != 1 and caso != 2): # Caso A: 1 # Caso B: 2
+    print("Caso inválido!")
+    caso = int(input("Digite novamente o caso do problema (Caso A: 1 ; Caso B: 2): "))
+
+semaphore = threading.Semaphore(2 + caso)
 
 # Início das threads
 Sargento_tainha = threading.Thread(target=sargento, args=(fila_cadeiras, cochilo_tainha))
 RecrutaZero = threading.Thread(target=barbeiro, args=(fila_cadeiras,"Zero"))
-Dentinho = threading.Thread(target=barbeiro, args=(fila_cadeiras,"Dentinho"))
-Otto = threading.Thread(target=barbeiro, args=(fila_cadeiras,"Otto"))
-Escovinha = threading.Thread(target=tenente, args=(fila_cadeiras, 3))
+if(caso == 2): Dentinho = threading.Thread(target=barbeiro, args=(fila_cadeiras,"Dentinho"))
+#Escovinha = threading.Thread(target=tenente, args=(fila_cadeiras)) 
+#Otto = threading.Thread(target=barbeiro, args=(fila_cadeiras,"Otto"))
 
 # Execução delas
-Dentinho.start()
 Sargento_tainha.start()
 RecrutaZero.start()
-Otto.start()
-Escovinha.start()
+if(caso == 2): Dentinho.start()
+#Escovinha.start() #agora o tenente deixou de ser thread. So vai ser chamado quando o Tainha for embora.
+#Otto.start()
