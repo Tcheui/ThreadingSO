@@ -151,7 +151,7 @@ def sargento(fila_cadeiras, cochilo):
                 cont_consecutivas = 0
         
         # Verifica as condições de parada do sargento. Se entrarem 1000 registros ou fila cheia três vezes consecutivas.
-        if cont >= 100 or cont_consecutivas == 3:
+        if cont >= 1000 or cont_consecutivas == 3:
             tenente(fila_cadeiras)
             logging.info("Sargento tainha indo embora!")
             break        
@@ -223,13 +223,15 @@ semaphore = threading.Semaphore(2 + caso)
 # Início das threads
 Sargento_tainha = threading.Thread(target=sargento, args=(fila_cadeiras, cochilo_tainha))
 RecrutaZero = threading.Thread(target=barbeiro, args=(fila_cadeiras,"Zero"))
-if(caso == 2): Dentinho = threading.Thread(target=barbeiro, args=(fila_cadeiras,"Dentinho"))
+if(caso == 2): 
+    Dentinho = threading.Thread(target=barbeiro, args=(fila_cadeiras,"Dentinho"))
 #Escovinha = threading.Thread(target=tenente, args=(fila_cadeiras)) 
 #Otto = threading.Thread(target=barbeiro, args=(fila_cadeiras,"Otto"))
 
 # Execução delas
 Sargento_tainha.start()
 RecrutaZero.start()
-if(caso == 2): Dentinho.start()
+if(caso == 2): 
+    Dentinho.start()
 #Escovinha.start() #agora o tenente deixou de ser thread. So vai ser chamado quando o Tainha for embora.
 #Otto.start()
